@@ -17,6 +17,26 @@ public enum WindingRule: Sendable {
     }
 }
 
+class GeometryBuilder {
+    var lineVerticies: [SCNVector3] = []
+    var lineIndices: [UInt16] = []
+    
+    var triangleVerticies: [SCNVector3] = []
+    var triangleIndices: [UInt16] = []
+    
+    func addLine(from: SCNVector3, to: SCNVector3) {
+        let count = lineVerticies.count
+        lineVerticies.append(contentsOf: [from, to])
+        lineIndices.append(contentsOf: [UInt16(count), UInt16(count + 1)])
+    }
+    
+    func addTriangle(vertex1: SCNVector3, vertex2: SCNVector3, vertex3: SCNVector3) {
+        let count = triangleVerticies.count
+        triangleVerticies.append(contentsOf: [vertex1, vertex2, vertex3])
+        triangleIndices.append(contentsOf: [UInt16(count), UInt16(count + 1), UInt16(count + 2)])
+    }
+}
+
 public struct BKPart: Sendable {
     @MainActor public static var geoCount: Int = 0
     
@@ -24,6 +44,63 @@ public struct BKPart: Sendable {
     let filename: String
     let lines: [BKFileLine]
     
+    @MainActor
+    public func toNode(inverted: Bool = false,
+                       transform: SCNMatrix4 = SCNMatrix4Identity) -> SCNNode {
+        let rootNode = SCNNode()
+        rootNode.name = filename
+        
+        var geometryBuilder = GeometryBuilder()
+        buildGeometry(inverted: inverted,
+                      transform: transform,
+                      geometryBuilder: geometryBuilder)
+        
+        return rootNode
+    }
+    
+    func buildGeometry(inverted: Bool = false,
+                       transform: SCNMatrix4 = SCNMatrix4Identity,
+                       geometryBuilder: GeometryBuilder) {
+        var currentWinding = WindingRule.CCW
+        var invertNext = false
+        
+        for line in lines {
+            switch line {
+            case .end:
+                return
+
+            case .subpart(let subpart, let part):
+                part.buildGeometry(inverted: inverted ^ invertNext,
+                                   transform: SCNMatrix4Mult(transform, subpart.transform),
+                                   geometryBuilder: geometryBuilder)
+                break
+
+            case .meta(let meta):
+                break
+                
+            case .bfc(let bfc):
+                break
+                
+            case .line(let line):
+                let v1 =
+                let v2 =
+                
+                geometryBuilder.addLine(from: , to: )
+                break
+                
+            case .triangle(let triangle):
+                break
+                
+            case .rectangle(let rectangle):
+                break
+                
+            case .optionalLine(let optionalLine):
+                break
+            }
+        }
+    }
+    
+    /*
     @MainActor
     public func toNode(inverted: Bool,
                        transform: SCNMatrix4 = SCNMatrix4Identity,
@@ -156,7 +233,7 @@ public struct BKPart: Sendable {
                     winding = winding.toggle()
                 }
                 if winding != partWinding {
-//                if currentWinding == .CW {
+//                if winding == .CW {
                     currentIndices.append(vertexIndex + 2)
                     currentIndices.append(vertexIndex + 1)
                     currentIndices.append(vertexIndex)
@@ -187,7 +264,7 @@ public struct BKPart: Sendable {
                 }
 
                 print("[\(filename)] Part: \(partWinding), \(winding)")
-//                if currentWinding == .CW {
+//                if winding == .CW {
                 if winding != partWinding {
                     currentIndices.append(vertexIndex + 2)
                     currentIndices.append(vertexIndex + 1)
@@ -225,6 +302,7 @@ public struct BKPart: Sendable {
 
         return rootNode
     }
+     */
 }
 
 private extension BKPart {
@@ -251,5 +329,11 @@ private extension BKPart {
 fileprivate extension Bool {
     static func ^ (left: Bool, right: Bool) -> Bool {
         return left != right
+    }
+}
+
+fileprivate extension SCNVector3 {
+    func multiply(by matrix: SCNMatrx4) -> SCNVector3 {
+        let u = matrix.m11 * x + matrix.m12 * y + matrix.m13 * z + matrix.m14
     }
 }

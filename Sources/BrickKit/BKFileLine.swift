@@ -177,8 +177,20 @@ struct BKOptionalLine {
     }
 }
 
+enum BFCCommand: Sendable {
+    case certify
+    case nocertify
+    case ccw
+    case cw
+    case invertnext
+    case clip
+    case noclip
+}
+
 enum BKFileLine: Sendable {
     case meta(BKMeta) // 0
+    case bfc([BFCCommand]) // 0 BFC
+    
     case subpart(BKSubpart, BKPart) // 1
     
     case line(BKLine) // 2
