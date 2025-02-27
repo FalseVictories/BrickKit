@@ -50,9 +50,6 @@ public struct BKPart: Sendable {
     @MainActor
     public func toNode(inverted: Bool = false,
                        transform: SCNMatrix4 = SCNMatrix4Identity) -> BKPartNode {
-        let rootNode = SCNNode()
-        rootNode.name = filename
-        
         var geometryBuilder = GeometryBuilder()
         buildGeometry(inverted: inverted,
                       transform: transform,
@@ -70,7 +67,10 @@ public struct BKPart: Sendable {
         let lineGeo = SCNGeometry(sources: [lineSrc],
                                   elements: [lineElement])
         
-        return BKPartNode(triangleGeometry: triangleGeo, lineGeometry: lineGeo)
+        let node = BKPartNode(triangleGeometry: triangleGeo, lineGeometry: lineGeo)
+        node.name = filename
+        
+        return node
     }
     
     func buildGeometry(inverted: Bool = false,
