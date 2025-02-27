@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  BKFile.swift
 //  BrickKit
 //
 //  Created by iain on 17/02/2025.
@@ -110,7 +110,12 @@ private extension BKFile {
             return filePath.string
         }
         
-        let knownFolders: [String] = ["parts", "p", "models"]
+        var knownFolders: [String] = ["parts", "models"]
+        if options.useHiRes {
+            knownFolders.append("p/48")
+        }
+        knownFolders.append("p")
+        
         for folder in knownFolders {
             let checkPath = options.basePath.appending(folder).appending(filename)
             print("Checking: \(checkPath.string)")

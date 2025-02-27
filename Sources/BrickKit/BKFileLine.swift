@@ -8,11 +8,18 @@
 import Foundation
 import SceneKit
 
+enum BFCCommand: Sendable {
+    case certify
+    case nocertify
+    case ccw
+    case cw
+    case invertnext
+    case clip
+    case noclip
+}
+
 enum BKMeta : Sendable{
-    case fileWinding(WindingRule)
-    case invertNextInstruction
-    case clip(Bool, WindingRule)
-    case certified(Bool, WindingRule)
+    case bfc([BFCCommand])
     case ignore
     
     static func from(string: String) -> Self {
@@ -22,35 +29,29 @@ enum BKMeta : Sendable{
         
         if componentCount > 2 {
             if components[1] == "BFC" {
-                if components[2] == "INVERTNEXT" {
-                    return .invertNextInstruction
-                } else if components[2] == "CCW" {
-                    return .fileWinding(.CCW)
-                } else if components[2] == "CW" {
-                    return .fileWinding(.CW)
-                } else if components[2] == "CERTIFY" {
-                    if componentCount == 3 {
-                        return .certified(true, .CCW)
-                    } else if components[3] == "CCW" {
-                        return .certified(true, .CCW)
-                    } else if components[3] == "CW" {
-                        return .certified(true, .CW)
-                    }
-                } else if components[2] == "NOCERTIFY" {
-                    return .certified(false, .CCW)
-                } else if components[2] == "NOCLIP" {
-                    return .clip(false, .CCW)
-                } else if components[2] == "CLIP" {
-                    if componentCount == 3 {
-                        return .clip(true, .CCW)
-                    } else if components[3] == "CCW" {
-                        if componentCount == 4 {
-                            return .clip(true, .CCW)
-                        } else {
-                            return .clip(true, .CW)
-                        }
+                var bfcCommands = [BFCCommand]()
+                for i in 2..<componentCount {
+                    switch components[i] {
+                    case "CLIP":
+                        bfcCommands.append(.clip)
+                    case "NOCLIP":
+                        bfcCommands.append(.noclip)
+                    case "INVERTNEXT":
+                        bfcCommands.append(.invertnext)
+                    case "CCW":
+                        bfcCommands.append(.ccw)
+                    case "CW":
+                        bfcCommands.append(.cw)
+                    case "CERTIFY":
+                        bfcCommands.append(.certify)
+                    case "NOCERTIFY":
+                        bfcCommands.append(.nocertify)
+                    default:
+                        break
                     }
                 }
+                
+                return .bfc(bfcCommands)
             }
         }
         
@@ -177,19 +178,8 @@ struct BKOptionalLine {
     }
 }
 
-enum BFCCommand: Sendable {
-    case certify
-    case nocertify
-    case ccw
-    case cw
-    case invertnext
-    case clip
-    case noclip
-}
-
 enum BKFileLine: Sendable {
     case meta(BKMeta) // 0
-    case bfc([BFCCommand]) // 0 BFC
     
     case subpart(BKSubpart, BKPart) // 1
     
