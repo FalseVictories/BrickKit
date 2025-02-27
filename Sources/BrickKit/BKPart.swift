@@ -53,16 +53,11 @@ public struct BKPart: Sendable {
         let rootNode = SCNNode()
         rootNode.name = filename
         
-        print("Building node for \(filename)")
-        
         var geometryBuilder = GeometryBuilder()
         buildGeometry(inverted: inverted,
                       transform: transform,
                       geometryBuilder: geometryBuilder)
-        
-        print("Triangles: \(geometryBuilder.triangleVerticies.count)")
-        print("Lines: \(geometryBuilder.lineVerticies.count)")
-        
+                
         let triangleSrc = SCNGeometrySource(vertices: geometryBuilder.triangleVerticies)
         let triangleElement = SCNGeometryElement(indices: geometryBuilder.triangleIndices,
                                                  primitiveType: .triangles)
@@ -86,7 +81,6 @@ public struct BKPart: Sendable {
         var invertNext = false
         let determinantFlip = transform.determinant < 0
         
-        print("   - building geometry for \(filename)")
         for line in lines {
             switch line {
             case .end:
