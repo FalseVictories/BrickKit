@@ -19,26 +19,103 @@ enum WindingRule {
 
 class GeometryBuilder {
     var lineVerticies: [SCNVector3] = []
-    var lineIndices: [UInt16] = []
+    var lineIndices: [Int] = []
     var lineCount = 0
     
     var triangleVerticies: [SCNVector3] = []
-    var triangleIndices: [UInt16] = []
+    var triangleIndices: [Int] = []
     var triangleCount = 0
     
     func addLine(from: SCNVector3, to: SCNVector3) {
         lineVerticies.append(contentsOf: [from, to])
-        lineIndices.append(contentsOf: [UInt16(lineCount), UInt16(lineCount + 1)])
+        lineIndices.append(contentsOf: [lineCount, lineCount + 1])
         lineCount += 2
     }
     
     // Does not consider winding rules, caller must order the vertices accordingly
     func addTriangle(vertex1: SCNVector3, vertex2: SCNVector3, vertex3: SCNVector3) {
         triangleVerticies.append(contentsOf: [vertex1, vertex2, vertex3])
-        triangleIndices.append(contentsOf: [UInt16(triangleCount),
-                                            UInt16(triangleCount + 1),
-                                            UInt16(triangleCount + 2)])
+        triangleIndices.append(contentsOf: [triangleCount,
+                                            triangleCount + 1,
+                                            triangleCount + 2])
         triangleCount += 3
+    }
+    
+    // 18912
+    
+    func splitToMaxTriangles() -> ([[SCNVector3]], [[UInt16]]) {
+        var triangles: [[SCNVector3]] = []
+        var indices: [[UInt16]] = []
+        
+        var currentTriangles: [SCNVector3] = []
+        var currentIndices: [UInt16] = []
+        var index = 0
+        var uintIndex = 0
+        
+        while index < triangleCount {
+            currentTriangles.append(triangleVerticies[index])
+            currentIndices.append(UInt16(triangleIndices[uintIndex]))
+            
+            index += 1
+
+            if index >= 65536 {
+                triangles.append(currentTriangles)
+                indices.append(currentIndices)
+                currentTriangles = []
+                currentIndices = []
+                uintIndex = 0
+            } else {
+                uintIndex += 1
+            }
+        }
+        
+        if !currentTriangles.isEmpty {
+            triangles.append(currentTriangles)
+        }
+        
+        if !currentIndices.isEmpty {
+            indices.append(currentIndices)
+        }
+        
+        return (triangles, indices)
+    }
+    
+    func splitToMaxLines() -> ([[SCNVector3]], [[UInt16]]) {
+        var lines: [[SCNVector3]] = []
+        var indices: [[UInt16]] = []
+        
+        var currentLines: [SCNVector3] = []
+        var currentIndices: [UInt16] = []
+        var index = 0
+        var uintIndex = 0
+        
+        while index < lineCount {
+            currentLines.append(lineVerticies[index])
+            currentIndices.append(UInt16(lineIndices[uintIndex]))
+            
+            index += 1
+            
+            // Want max 65534 per group
+            if index >= 65535 {
+                lines.append(currentLines)
+                indices.append(currentIndices)
+                currentLines = []
+                currentIndices = []
+                uintIndex = 0
+            } else {
+                uintIndex += 1
+            }
+        }
+        
+        if !currentLines.isEmpty {
+            lines.append(currentLines)
+        }
+        
+        if !currentIndices.isEmpty {
+            indices.append(currentIndices)
+        }
+        
+        return (lines, indices)
     }
 }
 
@@ -54,25 +131,53 @@ public struct BKPart: Sendable {
         buildGeometry(inverted: inverted,
                       transform: transform,
                       geometryBuilder: geometryBuilder)
-                
-        let triangleSrc = SCNGeometrySource(vertices: geometryBuilder.triangleVerticies)
-        let triangleElement = SCNGeometryElement(indices: geometryBuilder.triangleIndices,
-                                                 primitiveType: .triangles)
-        let triangleGeo = SCNGeometry(sources: [triangleSrc],
-                              elements: [triangleElement])
         
-        let lineSrc = SCNGeometrySource(vertices: geometryBuilder.lineVerticies)
-        let lineElement = SCNGeometryElement(indices: geometryBuilder.lineIndices,
-                                             primitiveType: .line)
-        let lineGeo = SCNGeometry(sources: [lineSrc],
-                                  elements: [lineElement])
+        let (trianglesVertices, triangleIndicies) = geometryBuilder.splitToMaxTriangles()
         
-        let node = BKPartNode(triangleGeometry: triangleGeo, lineGeometry: lineGeo)
+        var triangleRootNode: SCNNode
+        
+        let tCount = triangleIndicies.count
+        if tCount > 1 {
+            triangleRootNode = SCNNode()
+            
+            for i in 0 ..< triangleIndicies.count {
+                let tnode = createNode(verticies: trianglesVertices[i], indicies: triangleIndicies[i], primitiveType: .triangles)
+                triangleRootNode.addChildNode(tnode)
+            }
+        } else if tCount == 1 {
+            triangleRootNode = createNode(verticies: trianglesVertices[0], indicies: triangleIndicies[0], primitiveType: .triangles)
+        } else {
+            triangleRootNode = SCNNode()
+        }
+        
+        let (lineVertices, lineIndicies) = geometryBuilder.splitToMaxLines()
+        
+        var lineRootNode: SCNNode
+        
+        let lCount = lineIndicies.count
+        if lCount > 1 {
+            lineRootNode = SCNNode()
+            
+            for i in 0 ..< lineIndicies.count {
+                let tnode = createNode(verticies: lineVertices[i], indicies: lineIndicies[i], primitiveType: .line)
+                lineRootNode.addChildNode(tnode)
+            }
+        } else if lCount == 1 {
+            lineRootNode = createNode(verticies: lineVertices[0],
+                                      indicies: lineIndicies[0], primitiveType: .line)
+        } else {
+            lineRootNode = SCNNode()
+        }
+        
+        let node = BKPartNode(triangleNode: triangleRootNode, lineNode: lineRootNode)
         node.name = filename
         
         return node
     }
     
+}
+
+private extension BKPart {
     func buildGeometry(inverted: Bool = false,
                        transform: SCNMatrix4 = SCNMatrix4Identity,
                        geometryBuilder: GeometryBuilder) {
@@ -171,6 +276,17 @@ public struct BKPart: Sendable {
                 break
             }
         }
+    }
+    
+    func createNode(verticies: [SCNVector3],
+                    indicies: [UInt16],
+                    primitiveType: SCNGeometryPrimitiveType ) -> SCNNode {
+        let src = SCNGeometrySource(vertices: verticies)
+        let element = SCNGeometryElement(indices: indicies,
+                                         primitiveType: primitiveType)
+        let geo = SCNGeometry(sources: [src],
+                                      elements: [element])
+        return SCNNode(geometry: geo)
     }
 }
 
