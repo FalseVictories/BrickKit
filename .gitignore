@@ -65,3 +65,4 @@ DerivedData/
 .swiftpm/configuration/registries.json
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
+Examples/ldrawtest/ldrawtest.xcodeproj/xcshareddata
