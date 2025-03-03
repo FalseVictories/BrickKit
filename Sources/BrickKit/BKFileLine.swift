@@ -60,7 +60,7 @@ enum BKMeta : Sendable{
 }
 
 struct BKSubpart {
-    let colour: Int32
+    let color: UInt16
     let transform: SCNMatrix4
     
     let filename: String
@@ -68,7 +68,7 @@ struct BKSubpart {
     init(from string: String) {
         let components = string.components(separatedBy: " ")
         
-        colour = Int32(components[1]) ?? 16
+        color = UInt16(components[1]) ?? 16
         let position = SCNVector3(xStr: components[2], yStr: components[3], zStr: components[4]) ?? SCNVector3Zero
         let t1 = SCNVector3(xStr: components[5], yStr: components[6], zStr: components[7]) ?? SCNVector3Zero
         let t2 = SCNVector3(xStr: components[8], yStr: components[9], zStr: components[10]) ?? SCNVector3Zero
@@ -83,7 +83,7 @@ struct BKSubpart {
 }
 
 struct BKLine {
-    let colour: Int32
+    let color: UInt16
     
     let v1: SCNVector3
     let v2: SCNVector3
@@ -91,7 +91,7 @@ struct BKLine {
     init(from string: String) {
         let components = string.components(separatedBy: " ")
         
-        colour = Int32(components[1]) ?? 16
+        color = UInt16(components[1]) ?? 16
         v1 = SCNVector3(xStr: components[2],
                         yStr: components[3],
                         zStr: components[4]) ?? SCNVector3Zero
@@ -102,7 +102,7 @@ struct BKLine {
 }
 
 struct BKTriangle {
-    let colour: Int32
+    let color: UInt16
     
     let v1: SCNVector3
     let v2: SCNVector3
@@ -111,7 +111,7 @@ struct BKTriangle {
     init(from string: String) {
         let components = string.components(separatedBy: " ")
         
-        colour = Int32(components[1]) ?? 16
+        color = UInt16(components[1]) ?? 16
         v1 = SCNVector3(xStr: components[2],
                         yStr: components[3],
                         zStr: components[4]) ?? SCNVector3Zero
@@ -125,7 +125,7 @@ struct BKTriangle {
 }
 
 struct BKRectangle {
-    let colour: Int32
+    let color: UInt16
     
     let v1: SCNVector3
     let v2: SCNVector3
@@ -135,7 +135,7 @@ struct BKRectangle {
     init(from string: String) {
         let components = string.components(separatedBy: " ")
         
-        colour = Int32(components[1]) ?? 16
+        color = UInt16(components[1]) ?? 16
         v1 = SCNVector3(xStr: components[2],
                         yStr: components[3],
                         zStr: components[4]) ?? SCNVector3Zero
@@ -152,7 +152,7 @@ struct BKRectangle {
 }
 
 struct BKOptionalLine {
-    let colour: Int32
+    let color: UInt16
     
     let v1: SCNVector3
     let v2: SCNVector3
@@ -162,7 +162,7 @@ struct BKOptionalLine {
     init(from string: String) {
         let components = string.components(separatedBy: " ")
         
-        colour = Int32(components[1]) ?? 16
+        color = UInt16(components[1]) ?? 16
         v1 = SCNVector3(xStr: components[2],
                         yStr: components[3],
                         zStr: components[4]) ?? SCNVector3Zero

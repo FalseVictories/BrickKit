@@ -17,6 +17,20 @@ enum WindingRule {
     }
 }
 
+class GeometryBuilderCollection {
+    var builders: [BKColorCode: GeometryBuilder] = [:]
+    
+    func builderForColor(_ color: BKColorCode) -> GeometryBuilder {
+        if let existingBuilder = builders[color] {
+            return existingBuilder
+        } else {
+            let newBuilder = GeometryBuilder()
+            builders[color] = newBuilder
+            return newBuilder
+        }
+    }
+}
+
 class GeometryBuilder {
     var lineVerticies: [SCNVector3] = []
     var lineIndices: [Int] = []
@@ -40,8 +54,6 @@ class GeometryBuilder {
                                             triangleCount + 2])
         triangleCount += 3
     }
-    
-    // 18912
     
     func splitToMaxTriangles() -> ([[SCNVector3]], [[UInt16]]) {
         var triangles: [[SCNVector3]] = []
@@ -120,56 +132,39 @@ class GeometryBuilder {
 }
 
 public struct BKPart: Sendable {
-    public let colour: Int32
+    public let color: BKColorCode
     let filename: String
     let lines: [BKFileLine]
     
     @MainActor
     public func toNode(inverted: Bool = false,
                        transform: SCNMatrix4 = SCNMatrix4Identity) -> BKPartNode {
+        let builderCollection = GeometryBuilderCollection()
+        
         var geometryBuilder = GeometryBuilder()
+        var contrastingGeoBuilder = GeometryBuilder()
+        
+        builderCollection.builders[16] = geometryBuilder
+        builderCollection.builders[24] = contrastingGeoBuilder
+        
+        return toNode(inverted: inverted,
+                      transform: transform,
+                      geometryBuilders: builderCollection,
+                      currentColor: 16)
+    }
+    
+    @MainActor
+    func toNode(inverted: Bool = false,
+                transform: SCNMatrix4 = SCNMatrix4Identity,
+                geometryBuilders: GeometryBuilderCollection,
+                currentColor: BKColorCode) -> BKPartNode {
+        
         buildGeometry(inverted: inverted,
                       transform: transform,
-                      geometryBuilder: geometryBuilder)
+                      geometryBuilders: geometryBuilders,
+                      currentColor: 16)
         
-        let (trianglesVertices, triangleIndicies) = geometryBuilder.splitToMaxTriangles()
-        
-        var triangleRootNode: SCNNode
-        
-        let tCount = triangleIndicies.count
-        if tCount > 1 {
-            triangleRootNode = SCNNode()
-            
-            for i in 0 ..< triangleIndicies.count {
-                let tnode = createNode(verticies: trianglesVertices[i], indicies: triangleIndicies[i], primitiveType: .triangles)
-                triangleRootNode.addChildNode(tnode)
-            }
-        } else if tCount == 1 {
-            triangleRootNode = createNode(verticies: trianglesVertices[0], indicies: triangleIndicies[0], primitiveType: .triangles)
-        } else {
-            triangleRootNode = SCNNode()
-        }
-        
-        let (lineVertices, lineIndicies) = geometryBuilder.splitToMaxLines()
-        
-        var lineRootNode: SCNNode
-        
-        let lCount = lineIndicies.count
-        if lCount > 1 {
-            lineRootNode = SCNNode()
-            
-            for i in 0 ..< lineIndicies.count {
-                let tnode = createNode(verticies: lineVertices[i], indicies: lineIndicies[i], primitiveType: .line)
-                lineRootNode.addChildNode(tnode)
-            }
-        } else if lCount == 1 {
-            lineRootNode = createNode(verticies: lineVertices[0],
-                                      indicies: lineIndicies[0], primitiveType: .line)
-        } else {
-            lineRootNode = SCNNode()
-        }
-        
-        let node = BKPartNode(triangleNode: triangleRootNode, lineNode: lineRootNode)
+        let node = BKPartNode(colorBuilders: geometryBuilders)
         node.name = filename
         
         return node
@@ -180,12 +175,13 @@ public struct BKPart: Sendable {
 private extension BKPart {
     func buildGeometry(inverted: Bool = false,
                        transform: SCNMatrix4 = SCNMatrix4Identity,
-                       geometryBuilder: GeometryBuilder) {
+                       geometryBuilders: GeometryBuilderCollection,
+                       currentColor: BKColorCode) {
         var partWinding = WindingRule.CCW
         var currentWinding = WindingRule.CCW
         var invertNext = false
         let determinantFlip = transform.determinant < 0
-        
+                
         for line in lines {
             switch line {
             case .end:
@@ -194,7 +190,8 @@ private extension BKPart {
             case .subpart(let subpart, let part):
                 part.buildGeometry(inverted: inverted ^ invertNext,
                                    transform: SCNMatrix4Mult(subpart.transform, transform),
-                                   geometryBuilder: geometryBuilder)
+                                   geometryBuilders: geometryBuilders,
+                                   currentColor: subpart.color)
                 invertNext = false
                 break
 
@@ -225,7 +222,9 @@ private extension BKPart {
                 let v1 = line.v1.multiply(by: transform)
                 let v2 = line.v2.multiply(by: transform)
                 
-                geometryBuilder.addLine(from: v1, to: v2)
+                let realColor = line.color == 16 ? currentColor : line.color
+                let currentBuilder = geometryBuilders.builderForColor(realColor)
+                currentBuilder.addLine(from: v1, to: v2)
                 
                 invertNext = false
                 break
@@ -240,10 +239,12 @@ private extension BKPart {
                     winding = winding.toggle()
                 }
 
+                let realColor = triangle.color == 16 ? currentColor : triangle.color
+                let currentBuilder = geometryBuilders.builderForColor(realColor)
                 if winding == partWinding {
-                    geometryBuilder.addTriangle(vertex1: v1, vertex2: v2, vertex3: v3)
+                    currentBuilder.addTriangle(vertex1: v1, vertex2: v2, vertex3: v3)
                 } else {
-                    geometryBuilder.addTriangle(vertex1: v3, vertex2: v2, vertex3: v1)
+                    currentBuilder.addTriangle(vertex1: v3, vertex2: v2, vertex3: v1)
                 }
                 
                 invertNext = false
@@ -260,12 +261,14 @@ private extension BKPart {
                     winding = winding.toggle()
                 }
                 
+                let realColor = rectangle.color == 16 ? currentColor : rectangle.color
+                let currentBuilder = geometryBuilders.builderForColor(realColor)
                 if winding == partWinding {
-                    geometryBuilder.addTriangle(vertex1: v1, vertex2: v2, vertex3: v3)
-                    geometryBuilder.addTriangle(vertex1: v3, vertex2: v4, vertex3: v1)
+                    currentBuilder.addTriangle(vertex1: v1, vertex2: v2, vertex3: v3)
+                    currentBuilder.addTriangle(vertex1: v3, vertex2: v4, vertex3: v1)
                 } else {
-                    geometryBuilder.addTriangle(vertex1: v3, vertex2: v2, vertex3: v1)
-                    geometryBuilder.addTriangle(vertex1: v1, vertex2: v4, vertex3: v3)
+                    currentBuilder.addTriangle(vertex1: v3, vertex2: v2, vertex3: v1)
+                    currentBuilder.addTriangle(vertex1: v1, vertex2: v4, vertex3: v3)
                 }
                 
                 invertNext = false
@@ -276,17 +279,6 @@ private extension BKPart {
                 break
             }
         }
-    }
-    
-    func createNode(verticies: [SCNVector3],
-                    indicies: [UInt16],
-                    primitiveType: SCNGeometryPrimitiveType ) -> SCNNode {
-        let src = SCNGeometrySource(vertices: verticies)
-        let element = SCNGeometryElement(indices: indicies,
-                                         primitiveType: primitiveType)
-        let geo = SCNGeometry(sources: [src],
-                                      elements: [element])
-        return SCNNode(geometry: geo)
     }
 }
 

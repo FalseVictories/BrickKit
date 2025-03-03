@@ -26,7 +26,7 @@ public class BKFile {
     
     public class func load(file: String,
                            options: BKFileLoaderOptions,
-                           asColour colour: Int32 = 16) async throws -> BKPart {
+                           asColor color: BKColorCode = 16) async throws -> BKPart {
         var lines = [BKFileLine]()
         
         guard let filePath = findFile(file, withOptions: options) else {
@@ -38,7 +38,7 @@ public class BKFile {
             if let fileLine = try await parseLine(line, withOptions: options) {
                 switch fileLine {
                 case .end:
-                    return BKPart(colour: colour, filename: file, lines: lines)
+                    return BKPart(color: color, filename: file, lines: lines)
                     
                 default:
                     break
@@ -48,7 +48,7 @@ public class BKFile {
             }
         }
         
-        return BKPart(colour: colour, filename: file, lines: lines)
+        return BKPart(color: color, filename: file, lines: lines)
     }
     
     class func parseLine(_ line: String,
@@ -77,7 +77,7 @@ public class BKFile {
             let subpart = BKSubpart(from: trimmedLine)
             let part = try await BKFile.load(file: subpart.filename,
                                              options: options,
-                                             asColour: subpart.colour)
+                                             asColor: subpart.color)
             return .subpart(subpart, part)
             
         case "2":
@@ -118,7 +118,6 @@ private extension BKFile {
         
         for folder in knownFolders {
             let checkPath = options.basePath.appending(folder).appending(filename)
-            print("Checking: \(checkPath.string)")
             if FileManager.default.fileExists(atPath: checkPath.string) {
                 return checkPath.string
             }
