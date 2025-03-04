@@ -188,10 +188,11 @@ private extension BKPart {
                 return
 
             case .subpart(let subpart, let part):
+                let realColor = subpart.color == 16 ? currentColor : subpart.color
                 part.buildGeometry(inverted: inverted ^ invertNext,
                                    transform: SCNMatrix4Mult(subpart.transform, transform),
                                    geometryBuilders: geometryBuilders,
-                                   currentColor: subpart.color)
+                                   currentColor: realColor)
                 invertNext = false
                 break
 
