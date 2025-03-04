@@ -1,18 +1,16 @@
 //
 //  ViewController.swift
-//  ldrawtest
+//  LDrawSampleiOS
 //
-//  Created by iain on 16/02/2025.
+//  Created by iain on 04/03/2025.
 //
 
-import Cocoa
-import SceneKit
 import BrickKit
+import UIKit
+import SceneKit
 
-class ViewController: NSViewController {
+class ViewController: UIViewController {
     var sceneView: SCNView!
-    var partTableViewController: PartTableViewController!
-    
     var currentNode: SCNNode?
     
     override func viewDidLoad() {
@@ -21,43 +19,20 @@ class ViewController: NSViewController {
         guard let partDir = ProcessInfo.processInfo.environment["PART_DIR"] else {
             fatalError("PART_DIR environment variable not set")
         }
-
+        
         Task {
             try await BKColorManager.createSharedColorManager(from: partDir + "/LDConfig.ldr")
         }
-
-        partTableViewController = PartTableViewController(withPartsFolder: partDir)
-        addChild(partTableViewController)
         
-        view.addSubview(partTableViewController.view)
-        partTableViewController.view.translatesAutoresizingMaskIntoConstraints = false
-        
-        partTableViewController.partSelectionHandler = { [weak self] part in
-            Task {
-                do {
-                    let options = BKFileLoaderOptions(basePath: .init(partDir), useHiRes: false)
-                    self?.representedObject = try await BKFile.load(file: part, options: options)
-                } catch {
-                    print("\(error)")
-                }
-            }
-        }
-        
-        // Do any additional setup after loading the view.
         sceneView = SCNView()
         view.addSubview(sceneView)
         sceneView.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
-            partTableViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            partTableViewController.view.widthAnchor.constraint(equalToConstant: 150),
-            partTableViewController.view.topAnchor.constraint(equalTo: view.topAnchor),
-            partTableViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            
             sceneView.topAnchor.constraint(equalTo: view.topAnchor),
-            sceneView.leadingAnchor.constraint(equalTo: partTableViewController.view.trailingAnchor),
+            sceneView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             sceneView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            sceneView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            sceneView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
         
         sceneView.scene = SCNScene()
@@ -85,22 +60,29 @@ class ViewController: NSViewController {
         lightNode1.position = SCNVector3(20, -26, -27)
         sceneView.scene?.rootNode.addChildNode(lightNode1)
         
-        // 3023 1x2 plate
-        // 3022 2x2 plate
-        // 3024 1x2 plate
-        // 4073 1x1 round plate
-        // 2654 - boat stud
-        // 61069 side thruster
-        // 26021 - rollercoaster base
-        // 2549 - bridge
-        // 61975 - coiled whip
-        // 90826 - broom
-        
-        // NOCERTIFY: 2867, 2865
-        // 55816 
-        
+        Task {
+            do {
+                let options = BKFileLoaderOptions(basePath: .init(partDir), useHiRes: false)
+                let part = try await BKFile.load(file: "28424p01.dat", options: options)
+                let node = part.toNode(inverted: false)
+                node.rotation = SCNVector4(1, 0, 0.2, .pi)
+                
+                sceneView.scene?.rootNode.addChildNode(node)
+                
+                node.mainColor = BKColorManager.shared.colorForID(19) ?? .systemBrown
+                node.outlineColor = .black
+
+//                let rotateAction = SCNAction.repeatForever(SCNAction.rotateBy(x: 0, y: .pi, z: 0, duration: 5))
+//                node.runAction(rotateAction)
+                
+                currentNode = node
+            } catch {
+                print("\(error)")
+            }
+        }
     }
-    
+
+    /*
     override var representedObject: Any? {
         didSet {
             guard let part = representedObject as? BKPart else {
@@ -112,14 +94,11 @@ class ViewController: NSViewController {
             }
             
             let node = part.toNode(inverted: false)
-            
-            view.window?.title = node.name ?? ""
-            
             node.rotation = SCNVector4(x: 1, y: 0, z: 0.2, w: .pi)
             
             sceneView.scene?.rootNode.addChildNode(node)
             
-            node.mainColor = BKColorManager.shared.colorForID(35) ?? .systemBrown
+            node.mainColor = BKColorManager.shared.colorForID(19) ?? .systemBrown
             node.outlineColor = .black
             
             let rotateAction = SCNAction.repeatForever(SCNAction.rotateBy(x: 0, y: .pi, z: 0, duration: 5))
@@ -128,4 +107,6 @@ class ViewController: NSViewController {
             currentNode = node
         }
     }
+     */
 }
+
