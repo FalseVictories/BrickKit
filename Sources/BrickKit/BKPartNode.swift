@@ -5,12 +5,17 @@
 //  Created by iain on 27/02/2025.
 //
 
+#if os(macOS)
 import AppKit
+#elseif os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
+import UIKit
+#endif
+
 import SceneKit
 
 @MainActor
 public class BKPartNode: SCNNode {
-    public var mainColor: NSColor = .gray {
+    public var mainColor: BKNativeColor = .gray {
         didSet {
             if let triangleNode = colorTriangleNodes[16] {
                 triangleNode.geometry?.firstMaterial?.diffuse.contents = mainColor
@@ -21,7 +26,7 @@ public class BKPartNode: SCNNode {
         }
     }
     
-    public var outlineColor: NSColor = .black {
+    public var outlineColor: BKNativeColor = .black {
         didSet {
             if let lineNode = colorLineNodes[24] {
                 lineNode.geometry?.firstMaterial?.diffuse.contents = outlineColor

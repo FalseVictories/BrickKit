@@ -5,7 +5,12 @@
 //  Created by iain on 01/03/2025.
 //
 
+#if os(macOS)
 import AppKit
+#elseif os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
+import UIKit
+#endif
+
 import Foundation
 
 @MainActor
@@ -42,7 +47,7 @@ public class BKColorManager {
 }
 
 extension BKColorManager {
-    public func colorForID(_ id: UInt16) -> NSColor? {
+    public func colorForID(_ id: UInt16) -> BKNativeColor? {
         return colors[id]?.color ?? nil
     }
 }

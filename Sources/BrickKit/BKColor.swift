@@ -5,10 +5,22 @@
 //  Created by iain on 28/02/2025.
 //
 
+#if os(macOS)
 import AppKit
+#elseif os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
+import UIKit
+#endif
+
 import Foundation
 
 public typealias BKColorCode = UInt16
+
+#if os(macOS)
+public typealias BKNativeColor = NSColor
+#elseif os(iOS)
+public typealias BKNativeColor = UIColor
+#endif
+
 public enum BKFinish {
     case chrome
     case pearlescent
@@ -21,8 +33,8 @@ public enum BKFinish {
 public struct BKColor {
     public let name: String
     public var code: BKColorCode = 0
-    public var color: NSColor = .black
-    public var edgeColor: NSColor?
+    public var color: BKNativeColor = .black
+    public var edgeColor: BKNativeColor?
     public var edgeCode: BKColorCode?
     public var alpha: UInt8 = 255
     public var luminosity: UInt8 = 0
@@ -115,9 +127,8 @@ public struct BKColor {
     }
 }
 
-fileprivate extension NSColor {
+fileprivate extension BKNativeColor {
     convenience init?(fromHex hexColor: String, alpha: CGFloat = 1.0) {
-        var result : NSColor? = nil
         var colorCode : UInt32 = 0
 
         var hex: String = hexColor
@@ -138,9 +149,16 @@ fileprivate extension NSColor {
         let greenByte = (colorCode >> 8) & 0xFF
         let blueByte = colorCode & 0xFF
         
+#if os(macOS)
         self.init(calibratedRed: CGFloat(redByte) / 256.0,
                   green: CGFloat(greenByte) / 256.0,
                   blue: CGFloat(blueByte) / 256.0,
                   alpha: alpha)
+#elseif os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
+        self.init(red: CGFloat(redByte) / 256.0,
+                  green: CGFloat(greenByte) / 256.0,
+                  blue: CGFloat(blueByte) / 256.0,
+                  alpha: alpha)
+#endif
     }
 }
