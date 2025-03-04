@@ -19,11 +19,7 @@ class ViewController: UIViewController {
         guard let partDir = ProcessInfo.processInfo.environment["PART_DIR"] else {
             fatalError("PART_DIR environment variable not set")
         }
-        
-        Task {
-            try await BKColorManager.createSharedColorManager(from: partDir + "/LDConfig.ldr")
-        }
-        
+
         sceneView = SCNView()
         view.addSubview(sceneView)
         sceneView.translatesAutoresizingMaskIntoConstraints = false
@@ -62,8 +58,10 @@ class ViewController: UIViewController {
         
         Task {
             do {
+                try await BKColorManager.createSharedColorManager(from: partDir + "/LDConfig.ldr")
+                
                 let options = BKFileLoaderOptions(basePath: .init(partDir), useHiRes: false)
-                let part = try await BKFile.load(file: "28424p01.dat", options: options)
+                let part = try await BKFile.load(file: "72046p01.dat", options: options)
                 let node = part.toNode(inverted: false)
                 node.rotation = SCNVector4(1, 0, 0.2, .pi)
                 
