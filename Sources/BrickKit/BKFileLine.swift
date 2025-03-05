@@ -65,8 +65,12 @@ struct BKSubpart {
     
     let filename: String
 
-    init(from string: String) {
+    init?(from string: String) {
         let components = string.components(separatedBy: " ")
+        
+        if components.count != 15 {
+            return nil
+        }
         
         color = UInt16(components[1]) ?? 16
         let position = SCNVector3(xStr: components[2], yStr: components[3], zStr: components[4]) ?? SCNVector3Zero
@@ -88,8 +92,12 @@ struct BKLine {
     let v1: SCNVector3
     let v2: SCNVector3
     
-    init(from string: String) {
+    init?(from string: String) {
         let components = string.components(separatedBy: " ")
+        
+        if components.count != 8 {
+            return nil
+        }
         
         color = UInt16(components[1]) ?? 16
         v1 = SCNVector3(xStr: components[2],
@@ -108,8 +116,12 @@ struct BKTriangle {
     let v2: SCNVector3
     let v3: SCNVector3
     
-    init(from string: String) {
+    init?(from string: String) {
         let components = string.components(separatedBy: " ")
+        
+        if components.count != 11 {
+            return nil
+        }
         
         color = UInt16(components[1]) ?? 16
         v1 = SCNVector3(xStr: components[2],
@@ -132,8 +144,12 @@ struct BKRectangle {
     let v3: SCNVector3
     let v4: SCNVector3
     
-    init(from string: String) {
+    init?(from string: String) {
         let components = string.components(separatedBy: " ")
+        
+        if components.count != 14 {
+            return nil
+        }
         
         color = UInt16(components[1]) ?? 16
         v1 = SCNVector3(xStr: components[2],
@@ -159,8 +175,12 @@ struct BKOptionalLine {
     let control1: SCNVector3
     let control2: SCNVector3
     
-    init(from string: String) {
+    init?(from string: String) {
         let components = string.components(separatedBy: " ")
+        
+        if components.count != 14 {
+            return nil
+        }
         
         color = UInt16(components[1]) ?? 16
         v1 = SCNVector3(xStr: components[2],

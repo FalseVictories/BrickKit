@@ -22,6 +22,7 @@ public class BKFile {
     public enum BKFileError: Error {
         case noFile(String)
         case unknownLineType(String)
+        case badLine(String)
     }
     
     public class func load(file: String,
@@ -75,25 +76,42 @@ public class BKFile {
             
         case "1":
             let subpart = BKSubpart(from: trimmedLine)
+            
+            guard let subpart else {
+                throw BKFileError.badLine(line)
+            }
+            
             let part = try await BKFile.load(file: subpart.filename,
                                              options: options,
                                              asColor: subpart.color)
             return .subpart(subpart, part)
             
         case "2":
-            let l = BKLine(from: trimmedLine)
+            guard let l = BKLine(from: trimmedLine) else {
+                throw BKFileError.badLine(line)
+            }
+            
             return .line(l)
             
         case "3":
-            let l = BKTriangle(from: trimmedLine)
+            guard let l = BKTriangle(from: trimmedLine) else {
+                throw BKFileError.badLine(line)
+            }
+            
             return .triangle(l)
             
         case "4":
-            let l = BKRectangle(from: trimmedLine)
+            guard let l = BKRectangle(from: trimmedLine) else {
+                throw BKFileError.badLine(line)
+            }
+            
             return .rectangle(l)
             
         case "5":
-            let l = BKOptionalLine(from: trimmedLine)
+            guard let l = BKOptionalLine(from: trimmedLine) else {
+                throw BKFileError.badLine(line)
+            }
+            
             return .optionalLine(l)
             
         default:
