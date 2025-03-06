@@ -129,7 +129,7 @@ public struct BKColor {
 
 fileprivate extension BKNativeColor {
     convenience init?(fromHex hexColor: String, alpha: CGFloat = 1.0) {
-        var colorCode : UInt32 = 0
+        var colorCode : UInt64 = 0
 
         var hex: String = hexColor
         if hexColor.hasPrefix("#") {
@@ -139,7 +139,7 @@ fileprivate extension BKNativeColor {
         }
 
         let scanner = Scanner(string: hex)
-        let success = scanner.scanHexInt32(&colorCode)
+        let success = scanner.scanHexInt64(&colorCode)
 
         if !success {
             return nil

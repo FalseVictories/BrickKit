@@ -141,8 +141,8 @@ public struct BKPart: Sendable {
                        transform: SCNMatrix4 = SCNMatrix4Identity) -> BKPartNode {
         let builderCollection = GeometryBuilderCollection()
         
-        var geometryBuilder = GeometryBuilder()
-        var contrastingGeoBuilder = GeometryBuilder()
+        let geometryBuilder = GeometryBuilder()
+        let contrastingGeoBuilder = GeometryBuilder()
         
         builderCollection.builders[16] = geometryBuilder
         builderCollection.builders[24] = contrastingGeoBuilder
@@ -275,7 +275,7 @@ private extension BKPart {
                 invertNext = false
                 break
                 
-            case .optionalLine(let optionalLine):
+            case .optionalLine(_):
                 invertNext = false
                 break
             }

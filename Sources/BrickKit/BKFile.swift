@@ -21,7 +21,7 @@ public struct BKFileLoaderOptions: Sendable {
 public class BKFile {
     public enum BKFileError: Error {
         case noFile(String)
-        case unknownLineType(String)
+        case unknownLineType(Character)
         case badLine(String)
     }
     
@@ -59,7 +59,7 @@ public class BKFile {
             return nil
         }
         
-        let type = trimmedLine.substring(to: trimmedLine.index(line.startIndex, offsetBy: 1))
+        let type = trimmedLine[trimmedLine.startIndex]
         switch type {
         case "X":
             return .end
