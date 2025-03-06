@@ -18,7 +18,7 @@ enum BFCCommand: Sendable {
     case noclip
 }
 
-enum BKMeta : Sendable{
+enum BKMeta : Sendable, Equatable {
     case bfc([BFCCommand])
     case ignore
     
