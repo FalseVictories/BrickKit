@@ -119,7 +119,7 @@ class ViewController: NSViewController {
             
             sceneView.scene?.rootNode.addChildNode(node)
             
-            node.mainColor = BKColorManager.shared.colorForID(35) ?? .systemBrown
+            node.mainColor = BKColorManager.shared.colorForID(19) ?? .systemBrown
             node.outlineColor = .black
             
             let rotateAction = SCNAction.repeatForever(SCNAction.rotateBy(x: 0, y: .pi, z: 0, duration: 5))
